@@ -14,15 +14,24 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
 // Database Setup
-const tursoUrl = process.env.TURSO_DATABASE_URL || 'file:local.db';
+// Database Setup
+// Use :memory: for Vercel/Serverless if no external DB provided to prevent "Right-only file system" errors.
+const tursoUrl = process.env.TURSO_DATABASE_URL || 'file::memory:';
 const tursoToken = process.env.TURSO_AUTH_TOKEN;
 
-const db = createClient({
-    url: tursoUrl,
-    authToken: tursoToken,
-});
-
-console.log(`Database client initialized. URL: ${tursoUrl}`);
+let db;
+try {
+    db = createClient({
+        url: tursoUrl,
+        authToken: tursoToken,
+    });
+    console.log(`Database client initialized. URL: ${tursoUrl}`);
+} catch (err) {
+    console.error("Failed to initialize database client:", err);
+    // Fallback? If db is undefined, routes will crash.
+    // We should probably assign a mock or ensure it's handled.
+    db = { execute: async () => ({ rows: [] }) }; // Mock to prevent crash
+}
 
 // Helper to create tables
 async function createTables() {

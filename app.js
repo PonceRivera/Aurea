@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.getElementById('send-btn');
 
     // --- Configuration ---
-    const API_URL = 'http://localhost:3000';
+    // Use relative path for production (automatically uses the same domain)
+    const API_URL = '';
     const AUREA_NAME = "Aurea";
     const API_KEY = "AIzaSyDBbLC2OeBEiG4DLUb0nf95sj61HTMz1Xw";
 
