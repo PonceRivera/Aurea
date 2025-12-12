@@ -13,11 +13,15 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '.'))); // Serve static files
 
 // Database Setup
-const db = new sqlite3.Database('./aurea.db', (err) => {
+// Vercel apps are read-only, so we cannot write to a file like './aurea.db'.
+// We use ':memory:' on Vercel (data will be lost on restart) or if we can't open the file.
+const dbPath = process.env.VERCEL ? ':memory:' : './aurea.db';
+
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error opening database', err.message);
     } else {
-        console.log('Connected to SQLite database.');
+        console.log(`Connected to SQLite database at ${dbPath}`);
         createTables();
     }
 });
