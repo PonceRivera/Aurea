@@ -1,47 +1,53 @@
+require('dotenv').config();
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { createClient } = require('@libsql/client');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '.'))); // Serve static files
+app.use(express.static(path.join(__dirname, '.')));
 
 // Database Setup
-// Vercel apps are read-only, so we cannot write to a file like './aurea.db'.
-// We use ':memory:' on Vercel (data will be lost on restart) or if we can't open the file.
-const dbPath = process.env.VERCEL ? ':memory:' : './aurea.db';
+const tursoUrl = process.env.TURSO_DATABASE_URL || 'file:local.db';
+const tursoToken = process.env.TURSO_AUTH_TOKEN;
 
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database', err.message);
-    } else {
-        console.log(`Connected to SQLite database at ${dbPath}`);
-        createTables();
-    }
+const db = createClient({
+    url: tursoUrl,
+    authToken: tursoToken,
 });
 
-function createTables() {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
-    )`);
+console.log(`Database client initialized. URL: ${tursoUrl}`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS conversations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        message TEXT,
-        response TEXT,
-        FOREIGN KEY(username) REFERENCES users(username)
-    )`);
+// Helper to create tables
+async function createTables() {
+    try {
+        await db.execute(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT
+        )`);
+
+        await db.execute(`CREATE TABLE IF NOT EXISTS conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            message TEXT,
+            response TEXT,
+            FOREIGN KEY(username) REFERENCES users(username)
+        )`);
+        console.log("Tables ensured.");
+    } catch (e) {
+        console.error("Error creating tables:", e);
+    }
 }
+
+createTables();
 
 // Routes
 
@@ -52,22 +58,31 @@ app.post('/register', async (req, res) => {
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword], function (err) {
-            if (err) {
-                return res.status(400).json({ error: 'El usuario ya existe' });
-            }
-            res.json({ message: 'Usuario creado exitosamente' });
+        await db.execute({
+            sql: `INSERT INTO users (username, password) VALUES (?, ?)`,
+            args: [username, hashedPassword]
         });
+        res.json({ message: 'Usuario creado exitosamente' });
     } catch (e) {
-        res.status(500).json({ error: 'Error del servidor' });
+        // Check for unique constraint violation
+        if (e.message && e.message.includes('UNIQUE constraint failed')) {
+            return res.status(400).json({ error: 'El usuario ya existe' });
+        }
+        res.status(500).json({ error: 'Error del servidor: ' + e.message });
     }
 });
 
 // Login
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
-        if (err) return res.status(500).json({ error: 'Error de base de datos' });
+    try {
+        const result = await db.execute({
+            sql: `SELECT * FROM users WHERE username = ?`,
+            args: [username]
+        });
+
+        const user = result.rows[0];
+
         if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
 
         const validPassword = await bcrypt.compare(password, user.password);
@@ -76,37 +91,45 @@ app.post('/login', (req, res) => {
         } else {
             res.status(400).json({ error: 'Contraseña incorrecta' });
         }
-    });
+    } catch (e) {
+        res.status(500).json({ error: 'Error de base de datos' });
+    }
 });
 
 // Save Conversation
-app.post('/log', (req, res) => {
+app.post('/log', async (req, res) => {
     const { username, message, response } = req.body;
-    db.run(`INSERT INTO conversations (username, message, response) VALUES (?, ?, ?)`,
-        [username, message, response],
-        function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true });
-        }
-    );
+    try {
+        await db.execute({
+            sql: `INSERT INTO conversations (username, message, response) VALUES (?, ?, ?)`,
+            args: [username, message, response]
+        });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // Get History
-app.get('/history/:username', (req, res) => {
+app.get('/history/:username', async (req, res) => {
     const { username } = req.params;
-    db.all(`SELECT message, response FROM conversations WHERE username = ? ORDER BY timestamp ASC`, [username], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
+    try {
+        const result = await db.execute({
+            sql: `SELECT message, response FROM conversations WHERE username = ? ORDER BY timestamp ASC`,
+            args: [username]
+        });
+        res.json(result.rows);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
+
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// Vercel requiere exportar la app
 module.exports = app;
 
-// Solo escuchar si no estamos en entorno serverless (Vercel maneja el puerto automáticamente)
 if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
