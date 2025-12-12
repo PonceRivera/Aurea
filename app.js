@@ -237,16 +237,28 @@ Hacer que el usuario sienta que alguien realmente lo escucha, lo contiene y lo c
         const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro'];
         let lastError = null;
 
+        // Optimization: Keep System Prompt (idx 0) + Last 10 messages to save tokens
+        const systemMsg = history[0];
+        const recentHistory = history.slice(1).slice(-10);
+        const optimizedHistory = [systemMsg, ...recentHistory];
+
         for (const model of modelsToTry) {
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: history })
+                    body: JSON.stringify({ contents: optimizedHistory })
                 });
 
                 if (!response.ok) {
+                    if (response.status === 429) {
+                        console.warn(`Model ${model} rate limited (429).`);
+                        lastError = new Error("Demasiadas peticiones. Espera un momento.");
+                        // Wait 2s before trying next model if rate limited
+                        await new Promise(r => setTimeout(r, 2000));
+                        continue;
+                    }
                     if (response.status === 404) {
                         continue;
                     }
