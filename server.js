@@ -12,7 +12,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 // Serve static files from the 'public' folder
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+// Debug helper
+const fs = require('fs');
 
 // SPA Fallback: serve public/index.html for any unknown route
 app.get('*', (req, res) => {
@@ -20,7 +23,21 @@ app.get('*', (req, res) => {
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'Not found' });
     }
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+    const indexPath = path.join(process.cwd(), 'public', 'index.html');
+
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        // Debug mode: If index.html is missing, show us where we are
+        const debugInfo = {
+            cwd: process.cwd(),
+            filesInCwd: fs.readdirSync(process.cwd()),
+            publicFolderExists: fs.existsSync(path.join(process.cwd(), 'public')),
+            filesInPublic: fs.existsSync(path.join(process.cwd(), 'public')) ? fs.readdirSync(path.join(process.cwd(), 'public')) : 'N/A'
+        };
+        res.status(500).json({ error: 'Index file not found', debug: debugInfo });
+    }
 });
 // Database Setup
 // Database Setup
