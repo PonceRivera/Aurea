@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurea | Apoyo Emocional</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="auth-container" class="auth-container">
+        <div class="auth-box">
+            <h1 class="auth-title">Bienvenido a Aurea</h1>
+            <p class="auth-subtitle">Tu compañera de apoyo emocional</p>
+            
+            <div id="login-form">
+                <input type="text" id="login-username" placeholder="Usuario" class="auth-input">
+                <input type="password" id="login-password" placeholder="Contraseña" class="auth-input">
+                <button id="login-btn" class="auth-btn">Iniciar Sesión</button>
+                <p class="auth-switch">¿No tienes cuenta? <span id="show-register">Regístrate</span></p>
+            </div>
+
+            <div id="register-form" style="display: none;">
+                <input type="text" id="reg-username" placeholder="Elige un usuario" class="auth-input">
+                <input type="password" id="reg-password" placeholder="Elige una contraseña" class="auth-input">
+                <button id="register-btn" class="auth-btn secondary">Crear Cuenta</button>
+                <p class="auth-switch">¿Ya tienes cuenta? <span id="show-login">Inicia Sesión</span></p>
+            </div>
+            <p id="auth-message" class="auth-message"></p>
+        </div>
+    </div>
+
+    <div class="app-container" id="app-interface" style="display: none;">
+        <header class="chat-header">
+            <div class="avatar-container">
+                <div class="avatar">
+                    <span class="avatar-initial">A</span>
+                </div>
+                <div class="status-dot"></div>
+            </div>
+            <div class="header-info">
+                <h1>Aurea</h1>
+                <p>Compañera de apoyo emocional</p>
+            </div>
+            <button id="logout-btn" class="logout-btn" aria-label="Cerrar sesión">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            </button>
+        </header>
+
+        <div class="chat-area" id="chat-stream">
+
+        </div>
+
+        <footer class="input-area">
+            <div class="input-container">
+                <textarea id="user-input" placeholder="Escribe cómo te sientes..." rows="1"></textarea>
+                <button id="send-btn" aria-label="Enviar mensaje">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+            <p class="disclaimer">Aurea es una IA de acompañamiento, no una psicóloga real. En caso de crisis, busca
+                ayuda profesional.</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
