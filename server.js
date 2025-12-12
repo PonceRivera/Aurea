@@ -11,19 +11,8 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-// Use process.cwd() to correctly locate static files in Vercel's runtime environment
-app.use(express.static(process.cwd()));
 
-// Fallback for root to ensure index.html is served if static fails matching or for explicit root request
-app.get('/', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'index.html'), (err) => {
-        if (err) {
-            console.error("Error serving index.html:", err);
-            res.status(500).send("Error loading app: " + err.message);
-        }
-    });
-});
-
+// Database Setup
 // Database Setup
 // Database Setup
 // Use :memory: for Vercel/Serverless if no external DB provided to prevent "Right-only file system" errors.
@@ -150,15 +139,7 @@ app.get('/health', (req, res) => {
 
 module.exports = app;
 
-// Serve index.html for any other route (SPA Fallback)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'index.html'), (err) => {
-        if (err) {
-            console.error("Error serving index.html:", err);
-            res.status(500).send("Error loading app: " + err.message);
-        }
-    });
-});
+// Route removed: app.get('*') handled by Vercel static serving.
 
 if (require.main === module) {
     app.listen(PORT, () => {
