@@ -11,7 +11,17 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '.')));
+app.use(express.static(path.resolve(__dirname)));
+
+// Fallback for root to ensure index.html is served if static fails matching or for explicit root request
+app.get('/', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'index.html'), (err) => {
+        if (err) {
+            console.error("Error serving index.html:", err);
+            res.status(500).send("Error loading app: " + err.message);
+        }
+    });
+});
 
 // Database Setup
 // Database Setup
