@@ -98,6 +98,13 @@ app.get('/history/:username', (req, res) => {
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
 });
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+
+// Vercel requiere exportar la app
+module.exports = app;
+
+// Solo escuchar si no estamos en entorno serverless (Vercel maneja el puerto automáticamente)
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}
