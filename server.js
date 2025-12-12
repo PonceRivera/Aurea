@@ -149,6 +149,16 @@ app.get('/health', (req, res) => {
 
 module.exports = app;
 
+// Serve index.html for any other route (SPA Fallback)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'index.html'), (err) => {
+        if (err) {
+            console.error("Error serving index.html:", err);
+            res.status(500).send("Error loading app: " + err.message);
+        }
+    });
+});
+
 if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
