@@ -11,8 +11,17 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Serve static files from the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Database Setup
+// SPA Fallback: serve public/index.html for any unknown route
+app.get('*', (req, res) => {
+    // Check if request is for API to avoid returning HTML for 404 API calls
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 // Database Setup
 // Database Setup
 // Use :memory: for Vercel/Serverless if no external DB provided to prevent "Right-only file system" errors.
