@@ -2,23 +2,7 @@
     "version": 2,
     "rewrites": [
         {
-            "source": "/login",
-            "destination": "/server.js"
-        },
-        {
-            "source": "/register",
-            "destination": "/server.js"
-        },
-        {
-            "source": "/log",
-            "destination": "/server.js"
-        },
-        {
-            "source": "/history/:path*",
-            "destination": "/server.js"
-        },
-        {
-            "source": "/health",
+            "source": "/(.*)",
             "destination": "/server.js"
         }
     ]

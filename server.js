@@ -11,7 +11,8 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.resolve(__dirname)));
+// Use process.cwd() to correctly locate static files in Vercel's runtime environment
+app.use(express.static(process.cwd()));
 
 // Fallback for root to ensure index.html is served if static fails matching or for explicit root request
 app.get('/', (req, res) => {
